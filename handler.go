@@ -11,30 +11,30 @@ import (
 )
 
 // ServeDNS implements the plugin.Handler interface.
-func (re *Redis) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
-	state := request.Request{W: w, Req: r}
+func (r *Redis) ServeDNS(ctx context.Context, w dns.ResponseWriter, msg *dns.Msg) (int, error) {
+	state := request.Request{W: w, Req: msg}
 
-	zone := plugin.Zones(re.Zones).Matches(state.Name())
+	zone := plugin.Zones(r.Zones).Matches(state.Name())
 	if zone == "" {
-		return plugin.NextOrFailure(re.Name(), re.Next, ctx, w, r)
+		return plugin.NextOrFailure(r.Name(), r.Next, ctx, w, msg)
 	}
 
 	server := metrics.WithServer(ctx)
-	now := re.now().UTC()
+	now := r.now().UTC()
 
-	m := re.get(now, state, server)
+	m := r.get(now, state, server)
 	if m == nil {
-		crr := &ResponseWriter{ResponseWriter: w, Redis: re, state: state, server: metrics.WithServer(ctx)}
-		return plugin.NextOrFailure(re.Name(), re.Next, ctx, crr, r)
+		crr := &ResponseWriter{ResponseWriter: w, Redis: r, state: state, server: metrics.WithServer(ctx)}
+		return plugin.NextOrFailure(r.Name(), r.Next, ctx, crr, msg)
 	}
 
-	m.SetReply(r)
+	m.SetReply(msg)
 	state.SizeAndDo(m)
-	m, _ = state.Scrub(m)
-	w.WriteMsg(m)
+	m = state.Scrub(m)
+	_ = w.WriteMsg(m)
 
 	return dns.RcodeSuccess, nil
 }
 
 // Name implements the Handler interface.
-func (re *Redis) Name() string { return "redisc" }
+func (r *Redis) Name() string { return "redisc" }

@@ -2,7 +2,6 @@ package redis
 
 import (
 	"errors"
-	"strconv"
 	"time"
 
 	"github.com/coredns/coredns/plugin"
@@ -35,14 +34,14 @@ func New() *Redis {
 		addr:  "127.0.0.1:6379",
 		idle:  10,
 		pool:  &pool.Pool{},
-		pttl:  maxTTL,
-		nttl:  maxNTTL,
+		pttl:  SuccessTTL,
+		nttl:  DenialTTL,
 		now:   time.Now,
 	}
 }
 
 // Add adds the message m under k in Redis.
-func Add(p *pool.Pool, key int, m *dns.Msg, duration time.Duration) error {
+func Add(p *pool.Pool, key string, m *dns.Msg, duration time.Duration) error {
 	// SETEX key duration m
 	conn, err := p.Get()
 	if err != nil {
@@ -50,26 +49,26 @@ func Add(p *pool.Pool, key int, m *dns.Msg, duration time.Duration) error {
 	}
 	defer p.Put(conn)
 
-	resp := conn.Cmd("SETEX", strconv.Itoa(key), int(duration.Seconds()), ToString(m))
+	resp := conn.Cmd("SETEX", key, int(duration.Seconds()), ToString(m))
 
 	return resp.Err
 }
 
 // Get returns the message under key from Redis.
-func Get(p *pool.Pool, key int) (*dns.Msg, error) {
+func Get(p *pool.Pool, key string) (*dns.Msg, error) {
 	conn, err := p.Get()
 	if err != nil {
 		return nil, err
 	}
 	defer p.Put(conn)
 
-	resp := conn.Cmd("GET", strconv.Itoa(key))
+	resp := conn.Cmd("GET", key)
 	if resp.Err != nil {
 		return nil, resp.Err
 	}
 
 	ttl := 0 // Item just expired, slap 0 TTL on it.
-	respTTL := conn.Cmd("TTL", strconv.Itoa(key))
+	respTTL := conn.Cmd("TTL", key)
 	if respTTL.Err == nil {
 		ttl, err = respTTL.Int()
 		if err != nil {

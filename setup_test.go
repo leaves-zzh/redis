@@ -13,40 +13,40 @@ func TestSetup(t *testing.T) {
 	tests := []struct {
 		input            string
 		shouldErr        bool
-		expectedNttl     time.Duration
-		expectedPttl     time.Duration
+		expectedNTtl     time.Duration
+		expectedPTtl     time.Duration
 		expectedEndpoint string
 	}{
-		{`redis`, false, maxNTTL, maxTTL, defEndpoint},
+		{`redis`, false, DenialTTL, SuccessTTL, defEndpoint},
 		{`redis example.nl {
 					success 10
-				}`, false, maxNTTL, 10 * time.Second, defEndpoint},
+				}`, false, DenialTTL, 10 * time.Second, defEndpoint},
 		{`redis example.nl {
 					success 10
 					denial 15
 				}`, false, 15 * time.Second, 10 * time.Second, defEndpoint},
 		{`redis	{
 				endpoint 127.0.0.2:6379
-			}`, false, maxNTTL, maxTTL, "127.0.0.2:6379"},
+			}`, false, DenialTTL, SuccessTTL, "127.0.0.2:6379"},
 		{`redis	{
 				endpoint 127.0.0.3
-			}`, false, maxNTTL, maxTTL, "127.0.0.3:6379"},
+			}`, false, DenialTTL, SuccessTTL, "127.0.0.3:6379"},
 
 		// fails
 		{`redis example.nl {
 				success 15
 				denial aaa
-			}`, true, maxTTL, maxTTL, defEndpoint},
+			}`, true, DenialTTL, SuccessTTL, defEndpoint},
 		{`redis example.nl {
 				positive 15
 				negative aaa
-			}`, true, maxTTL, maxTTL, defEndpoint},
+			}`, true, DenialTTL, SuccessTTL, defEndpoint},
 		{`redis {
 				endpoint :1:1:6379
-			}`, true, maxTTL, maxTTL, defEndpoint},
+			}`, true, DenialTTL, SuccessTTL, defEndpoint},
 		{`redis {
 				endpoint 127.0.0.a
-			}`, true, maxTTL, maxTTL, defEndpoint},
+			}`, true, DenialTTL, SuccessTTL, defEndpoint},
 	}
 	for i, test := range tests {
 		c := caddy.NewTestController("dns", test.input)
@@ -62,11 +62,11 @@ func TestSetup(t *testing.T) {
 			continue
 		}
 
-		if re.nttl != test.expectedNttl {
-			t.Errorf("Test %v: Expected nttl %v but found: %v", i, test.expectedNttl, re.nttl)
+		if re.nttl != test.expectedNTtl {
+			t.Errorf("Test %v: Expected nttl %v but found: %v", i, test.expectedNTtl, re.nttl)
 		}
-		if re.pttl != test.expectedPttl {
-			t.Errorf("Test %v: Expected pttl %v but found: %v", i, test.expectedPttl, re.pttl)
+		if re.pttl != test.expectedPTtl {
+			t.Errorf("Test %v: Expected pttl %v but found: %v", i, test.expectedPTtl, re.pttl)
 		}
 		if re.addr != test.expectedEndpoint {
 			t.Errorf("Test %v: Expected endpoint %v but found: %v", i, test.expectedEndpoint, re.addr)

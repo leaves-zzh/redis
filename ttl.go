@@ -1,14 +1,12 @@
 package redis
 
 import (
-	"time"
-
 	"github.com/coredns/coredns/plugin/pkg/response"
-
 	"github.com/miekg/dns"
+	"time"
 )
 
-func minMsgTTL(m *dns.Msg, mt response.Type) time.Duration {
+func minMsgTTL(m *dns.Msg, mt response.Type, minTTL time.Duration) time.Duration {
 	if mt != response.NoError && mt != response.NameError && mt != response.NoData {
 		return 0
 	}
@@ -18,23 +16,22 @@ func minMsgTTL(m *dns.Msg, mt response.Type) time.Duration {
 		return failSafeTTL
 	}
 
-	minTTL := maxTTL
-	for _, r := range append(append(m.Answer, m.Ns...), m.Extra...) {
-		if r.Header().Rrtype == dns.TypeOPT {
-			// OPT records use TTL field for extended rcode and flags
-			continue
-		}
-		switch mt {
-		case response.NameError, response.NoData:
-			if r.Header().Rrtype == dns.TypeSOA {
-				return time.Duration(r.(*dns.SOA).Minttl) * time.Second
-			}
-		case response.NoError, response.Delegation:
-			if r.Header().Ttl < uint32(minTTL.Seconds()) {
-				minTTL = time.Duration(r.Header().Ttl) * time.Second
-			}
-		}
-	}
+	//for _, r := range append(append(m.Answer, m.Ns...), m.Extra...) {
+	//	if r.Header().Rrtype == dns.TypeOPT {
+	//		// OPT records use TTL field for extended rcode and flags
+	//		continue
+	//	}
+	//	switch mt {
+	//	case response.NameError, response.NoData:
+	//		if r.Header().Rrtype == dns.TypeSOA {
+	//			return time.Duration(r.(*dns.SOA).Minttl) * time.Second
+	//		}
+	//	case response.NoError, response.Delegation:
+	//		if r.Header().Ttl < uint32(minTTL.Seconds()) {
+	//			minTTL = time.Duration(r.Header().Ttl) * time.Second
+	//		}
+	//	}
+	//}
 	return minTTL
 }
 
