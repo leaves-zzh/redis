@@ -21,7 +21,7 @@ type Redis struct {
 	nttl time.Duration
 	pttl time.Duration
 
-	normal bool
+	usettl bool
 
 	addr string
 	idle int
@@ -38,7 +38,7 @@ func New() *Redis {
 		pool:   &pool.Pool{},
 		pttl:   SuccessTTL,
 		nttl:   DenialTTL,
-		normal: false,
+		usettl: false,
 		now:    time.Now,
 	}
 }

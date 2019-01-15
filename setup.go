@@ -80,12 +80,12 @@ func parse(c *caddy.Controller) (*Redis, error) {
 		// Refinements? In an extra block.
 		for c.NextBlock() {
 			switch c.Val() {
-			case "normal":
+			case "usettl":
 				args := c.RemainingArgs()
 				if len(args) < 1 {
 					return nil, c.ArgErr()
 				}
-				re.normal, _ = strconv.ParseBool(args[0])
+				re.usettl, _ = strconv.ParseBool(args[0])
 			case Success:
 				args := c.RemainingArgs()
 				if len(args) < 1 {

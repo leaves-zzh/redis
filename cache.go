@@ -120,7 +120,7 @@ func (w *ResponseWriter) MsgTTL(m *dns.Msg, mt response.Type) time.Duration {
 		return failSafeTTL
 	}
 
-	if w.normal {
+	if w.usettl {
 		for _, r := range append(append(m.Answer, m.Ns...), m.Extra...) {
 			if r.Header().Rrtype == dns.TypeOPT {
 				// OPT records use TTL field for extended rcode and flags
