@@ -48,12 +48,7 @@ func (w *ResponseWriter) WriteMsg(res *dns.Msg) error {
 	// key returns empty string for anything we don't want to cache.
 	key := key(res, mt, do)
 
-	duration := w.pttl
-	if mt == response.NameError || mt == response.NoData {
-		duration = w.nttl
-	}
-
-	duration = minMsgTTL(res, mt, duration)
+	duration := w.MsgTTL(res, mt)
 
 	if key != "" && duration > 0 {
 
@@ -109,6 +104,41 @@ func (w *ResponseWriter) Write(buf []byte) (int, error) {
 	log.Warningf("Redis called with Write: not caching reply")
 	n, err := w.ResponseWriter.Write(buf)
 	return n, err
+}
+
+func (w *ResponseWriter) MsgTTL(m *dns.Msg, mt response.Type) time.Duration {
+	d := w.pttl
+	if mt == response.NameError || mt == response.NoData {
+		d = w.nttl
+	}
+	if mt != response.NoError && mt != response.NameError && mt != response.NoData {
+		return 0
+	}
+
+	// No data to examine, return a short ttl as a fail safe.
+	if len(m.Answer)+len(m.Ns) == 0 {
+		return failSafeTTL
+	}
+
+	if w.normal {
+		for _, r := range append(append(m.Answer, m.Ns...), m.Extra...) {
+			if r.Header().Rrtype == dns.TypeOPT {
+				// OPT records use TTL field for extended rcode and flags
+				continue
+			}
+			switch mt {
+			case response.NameError, response.NoData:
+				if r.Header().Rrtype == dns.TypeSOA {
+					return time.Duration(r.(*dns.SOA).Minttl) * time.Second
+				}
+			case response.NoError, response.Delegation:
+				if r.Header().Ttl < uint32(d.Seconds()) {
+					d = time.Duration(r.Header().Ttl) * time.Second
+				}
+			}
+		}
+	}
+	return d
 }
 
 const (

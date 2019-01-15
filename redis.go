@@ -21,6 +21,8 @@ type Redis struct {
 	nttl time.Duration
 	pttl time.Duration
 
+	normal bool
+
 	addr string
 	idle int
 	// Testing.
@@ -30,13 +32,14 @@ type Redis struct {
 // New returns an new initialized Redis.
 func New() *Redis {
 	return &Redis{
-		Zones: []string{"."},
-		addr:  "127.0.0.1:6379",
-		idle:  10,
-		pool:  &pool.Pool{},
-		pttl:  SuccessTTL,
-		nttl:  DenialTTL,
-		now:   time.Now,
+		Zones:  []string{"."},
+		addr:   "127.0.0.1:6379",
+		idle:   10,
+		pool:   &pool.Pool{},
+		pttl:   SuccessTTL,
+		nttl:   DenialTTL,
+		normal: false,
+		now:    time.Now,
 	}
 }
 
