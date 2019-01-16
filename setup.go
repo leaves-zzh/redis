@@ -5,7 +5,6 @@ import (
 	"net"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/coredns/coredns/core/dnsserver"
@@ -42,9 +41,7 @@ func setup(c *caddy.Controller) error {
 	})
 
 	c.OnStartup(func() error {
-		once.Do(func() {
-			metrics.MustRegister(c, cacheHits, cacheMisses, cacheDrops, redisErr)
-		})
+		metrics.MustRegister(c, cacheHits, cacheMisses, cacheDrops, redisErr)
 		return nil
 	})
 
@@ -152,5 +149,3 @@ func parse(c *caddy.Controller) (*Redis, error) {
 
 	return nil, nil
 }
-
-var once sync.Once
